@@ -30,11 +30,17 @@ class AlbumsService {
       text: 'SELECT * FROM albums WHERE id = $1',
       values: [id],
     };
+    const queryMusic = {
+      text: 'SELECT * FROM musics WHERE album_id = $1',
+      values: [id],
+    };
 
     const result = await this._pool.query(query);
+    const resultMusic = await this._pool.query(queryMusic);
     if (!result.rows.length) {
       throw new NotFoundError('Album tidak ditemukan');
     }
+    result.rows[0].songs = resultMusic.rows;
     return result.rows[0];
   }
 

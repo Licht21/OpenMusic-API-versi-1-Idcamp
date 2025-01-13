@@ -26,7 +26,8 @@ class MusicsHandler {
   }
 
   async getMusicsHandler(request, h) {
-    const musics = await this._service.getMusics();
+    const { title = undefined, performer = undefined } = request.query;
+    const musics = await this._service.getMusics(title, performer);
     return h.response({
       status: 'success',
       data: {

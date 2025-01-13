@@ -3,7 +3,6 @@ const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
-// const mapDBToModel = require('../../utils');
 
 class MusicsService {
   constructor() {
@@ -25,8 +24,28 @@ class MusicsService {
     return result.rows[0].id;
   }
 
-  async getMusics() {
-    const result = await this._pool.query('SELECT id, title, performer FROM musics');
+  async getMusics(title, performer) {
+    let result;
+    if (title === undefined && performer === undefined) {
+      result = await this._pool.query('SELECT id, title, performer FROM musics');
+    } else if (title !== undefined && performer !== undefined) {
+      const query = {
+        text: 'SELECT id, title, performer FROM musics WHERE title ILIKE $1 AND performer ILIKE $2',
+        values: [`%${title}%`, `%${performer}%`],
+      };
+      result = await this._pool.query(query);
+    } else {
+      const queryTitle = {
+        text: 'SELECT id, title, performer FROM musics WHERE title ILIKE $1',
+        values: [`%${title}%`],
+      };
+      const queryPerformer = {
+        text: 'SELECT id, title, performer FROM musics WHERE performer ILIKE $1',
+        values: [`%${performer}%`],
+      };
+      result = title === undefined ? await this._pool.query(queryPerformer)
+        : await this._pool.query(queryTitle);
+    }
     return result.rows;
   }
 
@@ -57,7 +76,7 @@ class MusicsService {
 
   async deleteMusicById(id) {
     const query = {
-      text: ' DELETE FROM musics WHERE id = $1',
+      text: 'DELETE FROM musics WHERE id = $1 RETURNING id',
       values: [id],
     };
     const result = await this._pool.query(query);
